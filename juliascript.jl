@@ -1,5 +1,6 @@
 #! usr/bin/env julia
 
+#lines 37 through 72 are modified from my practical 4 script
 
 println("loading packages...")
 using StringDistances
