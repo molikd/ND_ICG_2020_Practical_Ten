@@ -7,9 +7,8 @@
 #module load julia
 
 
-#input is a text file of sequences (one per line), output is csv file of the distance matrix
-#word_len is the wordlength in the Jaccard distance calculation
-#Each row and column in the matrix corresponds to one of the sequences in the input file
+#input is a text file of sequences, output is a png of the clustered (with kmeans) mds evaluaiton of distance matrix.
+#specify number of clusters with "n_clusters", specify word length in distance calculation with "word_len"
 
 julia juliascript.jl --input "sequences.txt" \
 	--output "mds_cluster_plot_sdw" \
