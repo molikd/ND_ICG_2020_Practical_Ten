@@ -6,7 +6,7 @@
 #Usage Ex: julia ./plotDistanceMatrix.jl sequences.txt 3 sequenceDistances.csv sequencePlot.png
 
 #Add packages
-#import pkg
+#import Pkg
 #Pkg.add("StringDistances")
 #Pkg.add("DataFrames")
 #Pkg.add("CSV")
@@ -15,7 +15,12 @@
 #Pkg.add("StatsPlots")
 #Pkg.add("Plots")
 
+#Ensure GR run-time is up-to-date, if necessary
+#ENV["GRDIR"] = ""
+#Pkg.build("GR")
+
 #Load packages
+println("Importing packages...")
 using StringDistances
 using DataFrames
 using CSV
@@ -28,7 +33,8 @@ using Plots
 inputSeqs=ARGS[1]
 inputLength=parse(Int, ARGS[2])
 outputDist=ARGS[3]
-outputPlot=ARGS[4]
+inputClusters=ARGS[4]
+outputPlot=ARGS[5]
 
 #Read input sequences and convert to a matrix
 seqsCSV=CSV.read(inputSeqs, header=false)
@@ -41,21 +47,26 @@ numSeqs=length(seqsMat)
 distMat=zeros(numSeqs,numSeqs)
 
 #Loop over input sequences and compare each with all sequences
+println("Calculating sequence distances...")
 for i in 1:numSeqs
 	for j in 1:numSeqs
 		#Determine distance
-		dist=evaluate(Overlap(inputLength), seqsMat[i], seqsMat[j])
+		dist=StringDistances.evaluate(Overlap(inputLength), seqsMat[i], seqsMat[j])
 		#Update distance matrix
 		global distMat[i,j]=dist
 	end
 end
 
 #Convert to dataframe and wite to csv
+println("Writting matrix to CSV...")
 distDF=DataFrame(distMat)
 CSV.write(outputDist, distDF)
 
 #Plot results of MDS with hierarchical clustering
-classicMDS=classical_mds(distDF, 1)
-result=hclust(classicMDS, linkage=:single)
+println("Generating MDS plot...")
+classicMDS=classical_mds(distMat, 4)
+result=fuzzy_cmeans(classicMDS, inputClusters, 2)
+#Generate scatter plot
+scatter(numSeqs, numSeqs, marker_z=result.centers,color=:lightrainbow, legend=false)
 plot(result)
 png(outputPlot)
