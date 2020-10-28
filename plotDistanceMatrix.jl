@@ -12,7 +12,6 @@
 #Pkg.add("CSV")
 #Pkg.add("MultivariateStats")
 #Pkg.add("Clustering")
-#Pkg.add("StatsPlots")
 #Pkg.add("Plots")
 
 #Ensure GR run-time is up-to-date, if necessary
@@ -26,18 +25,19 @@ using DataFrames
 using CSV
 using MultivariateStats
 using Clustering
-using StatsPlots
 using Plots
+plotly()
 
 #Retrieve inputs
 inputSeqs=ARGS[1]
 inputLength=parse(Int, ARGS[2])
 outputDist=ARGS[3]
-inputClusters=ARGS[4]
-outputPlot=ARGS[5]
+inputDims=parse(Int, ARGS[4])
+inputClusters=parse(Int, ARGS[5])
+outputPlot=ARGS[6]
 
 #Read input sequences and convert to a matrix
-seqsCSV=CSV.read(inputSeqs, header=false)
+seqsCSV=CSV.read(inputSeqs, DataFrame, header=false)
 seqsMat=convert(Matrix, seqsCSV)
 
 #Determine number of sequences
@@ -63,10 +63,12 @@ distDF=DataFrame(distMat)
 CSV.write(outputDist, distDF)
 
 #Plot results of MDS with hierarchical clustering
-println("Generating MDS plot...")
-classicMDS=classical_mds(distMat, 4)
-result=fuzzy_cmeans(classicMDS, inputClusters, 2)
+println("Clustering MDS results...")
+inputFuzziness=inputClusters+1
+classicMDS=MultivariateStats.transform(fit(MDS, distMat, maxoutdim=inputDims, distances=true))
+result=fuzzy_cmeans(classicMDS, inputClusters, inputFuzziness)
+#result=kmeans(classicMDS, inputClusters)
 #Generate scatter plot
-scatter(numSeqs, numSeqs, marker_z=result.centers,color=:lightrainbow, legend=false)
-plot(result)
-png(outputPlot)
+println("Generating plot and writing to PNG...")
+Plots.scatter(classicMDS[1,:], classicMDS[2,:], marker_z=result.weights,color=:lightrainbow, legend=false)
+Plots.png(outputPlot)
